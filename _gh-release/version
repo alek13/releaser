@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+version=`date +'%Y.%m'`
+message='bump version. Release %s'
+
+while read option; do
+    case ${option} in
+        -v|--version) read version;;
+        -t|--tag) read version;;
+        -m|--message) read message;;
+        *) echo "${underline}${lightred}Error$reset${lightred}: Unknown option $option$reset"; usage; exit 2; ;;
+    esac
+done <<< $(for i in "$@"; do echo "$i"; done);
+
+#message=`printf "'$message'" ${version}`
+
+c.header ' Info: ';
+echo "${green}Version Tag:   $reset $bold$version$reset";
+echo "${green}Commit message:$reset $bold$message$reset";
+c.askContinue "Continue";
+
+echo
+echo "${green}git add ${changeLogFile}$reset"
+git add ${changeLogFile}
+echo
+sleep 0.5;
+
+c.header ' Git Status: ';
+git status;
+sleep 0.5;
+
+c.header 'git diff --cached';
+sleep 0.5;
+git diff --cached;
+
+echo
+c.askContinue "Continue with committing";
+c.header ' Committing: ';
+git commit -m "${message}";
+
+echo
+c.askContinue "Push to remote $green'${remote}'$reset";
+c.header ' Pushing: ';
+git push "${remote}";

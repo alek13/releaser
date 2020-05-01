@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+. colors
+
+if [[ $# > 0 ]]; then
+    while read option; do
+        case ${option} in
+            *) info.error "Unknown option $option"; info.usage; exit 2; ;;
+        esac
+    done <<< $(for i in "$@"; do echo "$i"; done);
+fi
+
+function getApiRepoUrl() {
+    git config --get remote.${remote}.url |
+    sed 's|^git@github.com:|https://github.com/|' |
+    sed 's|\.git$||';
+}
+
+
+c.header ' Test: ';
+curl -s -i \
+    -H "Authorization: token 4b199146f920e8998da7b4f0e0e2074b0d564582" \
+    https://api.github.com/repos/lord-server/lord/releases
+# echo "${ttt}"

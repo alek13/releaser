@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+. colors
+
+commit=''
+version=`date +'%Y.%m'`
+
+while read option; do
+    case ${option} in
+        -c|--commit) read commit;;
+        -v|--version) read version;;
+        -t|--tag) read version;;
+        '') continue;;
+        *) info.error "Unknown option $option"; info.usage; exit 2; ;;
+    esac
+done <<< $(for i in "$@"; do echo "$i"; done);
+
+
+
+function getGitMessages() {
+    local from=`git describe --tags --abbrev=0`
+    local to=${commit}
+
+    git --no-pager log ${from}..${to} --oneline --reverse
+}
+
+function getRepoUrl() {
+    git config --get remote.${remote}.url |
+        sed 's|^git@github.com:|https://github.com/|' |
+        sed 's|\.git||';
+}
+function makeChangeLog() {
+    local commitsList=$1;
+    local repoUrl=`getRepoUrl`;
+
+    echo "## [$version]($repoUrl/releases/tag/$version)"
+    echo "$commitsList" | cut -f 2- -d ' ' | sed 's/^/ - /'
+    echo
+}
+function filePrepend() {
+    local file="$1";
+    local text="$2";
+
+    echo "$text" > tmp.md;
+    cat "$file" >> tmp.md;
+    cat tmp.md > "$file";
+    rm tmp.md;
+}
+
+c.header ' Found commits: ';
+getGitMessages; # just output found commits (with hashes) by 'git log'
+
+c.header ' Prepending to Change Log: ';
+messages=`getGitMessages`;
+changLog=`makeChangeLog "${messages}"`;
+echo "${changLog}" |
+    sed "s/^## \(\[${version/\./\\.}\]\)\(.*\)\$/${cyan}## ${green}\\1${cyan}\\2${reset}/" |
+    sed "s/^ - \(.*\)\$/${green} - ${reset}\\1/";
+echo
+c.askContinue "Continue with prepend this to $changeLogFile";
+filePrepend ${changeLogFile} "$changLog";

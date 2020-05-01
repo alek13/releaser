@@ -1,0 +1,46 @@
+#!/bin/bash
+script_dir=$(realpath $(dirname $0))
+
+. colors
+
+function info.about() {
+    echo
+    echo "${green}gh-release$reset - make release easier"
+    echo
+}
+function info.usage() {
+    echo "${yellow}Usage$reset:"
+    echo "    gh-release <command> [options] [arguments]"
+    echo
+    echo "${yellow}Commands$reset:"
+    echo "    ${green}prepare$reset     Collect commit messages and prepend to ChangLog file"
+    echo "    ${green}version$reset     Creates bump-commit & specified tag"
+    echo "    ${green}create$reset      Creates release on GitHub"
+    echo
+}
+function info.error() {
+    echo
+    echo "${underline}${lightred}Error$reset${lightred}: $@$reset"
+    echo
+}
+info.full() {
+    info.about;
+    info.usage;
+}
+
+
+. ${script_dir}/_gh-release/_configure
+
+if [[ $# == 0 ]]; then
+    info.full;
+    exit 1;
+fi
+
+command=$1;shift
+
+case ${command} in
+    prepare) . ${script_dir}/_gh-release/prepare;;
+    version) . ${script_dir}/_gh-release/version;;
+    create) . ${script_dir}/_gh-release/create;;
+    *) info.error 'Unknown command';info.usage; exit 1;;
+esac;

@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+#
+# Set Colors
+#
+
+bold=`tput bold`
+underline=`tput sgr 0 1`
+reset=`tput sgr0`
+
+black=`tput setaf 0`
+red=`tput setaf 1`
+green=`tput setaf 2`
+yellow=`tput setaf 3`
+blue=`tput setaf 4`
+magenta=`tput setaf 5`
+cyan=`tput setaf 6`
+white=`tput setaf 7`
+
+lightred=`tput setaf 196`
+lightblue=`tput setaf 21`
+
+purple=`tput setaf 165`
+
+
+#
+# Headers and  Logging
+# @param $text
+#
+c.header() {
+    printf "\n${bold}${purple}==========  %s  ==========${reset}\n" "$@"
+}
+
+c.arrow() {
+    printf "➜ $@\n"
+}
+
+c.success() {
+    printf "${green}✔ %s${reset}\n" "$@"
+}
+
+c.error() {
+    printf "${red}✖ %s${reset}\n" "$@"
+}
+
+c.warning() {
+    printf "${yellow}➜ %s${reset}\n" "$@"
+}
+
+c.underline() {
+    printf "${underline}${bold}%s${reset}\n" "$@"
+}
+
+c.bold() {
+    printf "${bold}%s${reset}" "$@"
+}
+c.boldLn() {
+    printf "${bold}%s${reset}\n" "$@"
+}
+
+c.note() {
+    printf "${underline}${bold}${blue}Note:${reset}  ${blue}%s${reset}\n" "$@"
+}
+
+
+
+c.askContinue() {
+    local question=$1
+
+    while true; do
+        read -p "$question ? [y(es)/n(o)] " -n 1 choice;
+        echo;
+        case ${choice} in
+            [Yy]* ) break;;
+            [Nn]* ) exit;;
+            * ) echo "Please answer y (yes) or n (no).";;
+        esac;
+    done;
+}
+

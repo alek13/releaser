@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+function getGitRemote() {
+    local rmt=${remote};
+
+    if [[ ${rmt} != "" ]]; then
+        echo ${rmt};
+        return;
+    fi
+
+    if [[ `git remote` == 'origin' ]]; then
+        rmt='origin';
+    fi
+
+    # TODO: try to detect automatically
+
+    echo ${rmt};
+}
+function getChangeLogFile() {
+    local file=${changeLogFile};
+
+    if [[ ${file} != "" ]]; then
+        echo ${file};
+        return;
+    fi
+    if [[ -f 'CHANGELOG.md' ]]; then
+        file='CHANGELOG.md';
+    fi
+    if [[ -f 'changelog.md' ]]; then
+        file='changelog.md';
+    fi
+
+    echo ${file};
+}
+function autoConfigError() {
+    local message=$1;
+    local configVar=$2;
+
+    info.error "$red$message. Please use config $bold\`.gh-release\`$reset$red and set $bold\`$configVar\`$reset$red variable.$reset";
+}
+
+if [[ -f '.gh-release' ]]; then
+    . '.gh-release'
+fi
+
+remote=`getGitRemote`;
+if [[ ${remote} == "" ]]; then
+    autoConfigError "Can't detect git remote" 'remote';
+    exit 2;
+fi
+
+changeLogFile=`getChangeLogFile`;
+if [[ ${changeLogFile} == "" ]]; then
+    autoConfigError "Can't find Change Log file" 'changeLogFile';
+    exit 3;
+fi
