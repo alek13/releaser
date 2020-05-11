@@ -3,16 +3,33 @@
 version=`date +'%Y.%m'`
 message='bump version. Release %s'
 
+function info.versionHelp() {
+    echo
+    echo "gh-release ${green}version$reset - Creates bump-commit & specified tag."
+    echo "    Use this command after 'gh-release prepare' and after your own edits of ChangLog file."
+    echo
+    echo "${yellow}Usage$reset:"
+    echo "    gh-release version ${green}[${reset}{-m|--message} <commit_message>${green}]${reset} ${green}[${reset}{-v|--version|-t|--tag} <tag>${green}]${reset}"
+    echo
+    echo "${yellow}Options$reset:"
+    echo "    ${green}-m|--message           <commit_message>$reset     ${yellow}[default: 'bump version. Release %s']$reset The message of bump commit."
+    echo "                                                                                      You can use ${yellow}%s$reset for insert version into message."
+    echo "    ${green}-v|--version|-t|--tag  <tag>$reset                ${yellow}[default: YYYY.MM]$reset Version tag to create."
+    echo
+}
+
 while read option; do
     case ${option} in
         -v|--version) read version;;
         -t|--tag) read version;;
         -m|--message) read message;;
-        *) echo "${underline}${lightred}Error$reset${lightred}: Unknown option $option$reset"; usage; exit 2; ;;
+        -h|--help) info.versionHelp; exit;;
+        '') continue;;
+        *) echo "${underline}${lightred}Error$reset${lightred}: Unknown option $option$reset"; info.usage; exit 2; ;;
     esac
 done <<< $(for i in "$@"; do echo "$i"; done);
 
-#message=`printf "'$message'" ${version}`
+message=`printf "'$message'" ${version}`
 
 c.header ' Info: ';
 echo "${green}Version Tag:   $reset $bold$version$reset";
