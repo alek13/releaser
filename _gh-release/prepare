@@ -1,15 +1,29 @@
 #!/usr/bin/env bash
 
-. colors
-
 commit=''
 version=`date +'%Y.%m'`
+
+function info.prepareHelp() {
+    echo
+    echo "gh-release ${green}prepare$reset - Collect commit messages and prepend to ChangLog file."
+    echo "    It takes all commits from latest tag to current latest commit (or to specified commit in '-c' option)."
+    echo "    Before continue with 'gh-release version' you can edit your prepared ChangLog file."
+    echo
+    echo "${yellow}Usage$reset:"
+    echo "    gh-release prepare ${green}[${reset}{-c|--commit} <commit_hash>${green}]${reset} ${green}[${reset}{-v|--version|-t|--tag} <tag>${green}]${reset}"
+    echo
+    echo "${yellow}Options$reset:"
+    echo "    ${green}-c|--commit            <commit_hash>$reset       ${yellow}[default: latest ]$reset The commit to take ${bold}to$reset."
+    echo "    ${green}-v|--version|-t|--tag  <tag>$reset               ${yellow}[default: YYYY.MM]$reset Specified tag will be used to generate link in ChangeLog file."
+    echo
+}
 
 while read option; do
     case ${option} in
         -c|--commit) read commit;;
         -v|--version) read version;;
         -t|--tag) read version;;
+        -h|--help) info.prepareHelp; exit;;
         '') continue;;
         *) info.error "Unknown option $option"; info.usage; exit 2; ;;
     esac

@@ -10,7 +10,7 @@ function info.about() {
 }
 function info.usage() {
     echo "${yellow}Usage$reset:"
-    echo "    gh-release <command> [options] [arguments]"
+    echo "    gh-release ${green}<${reset}command${green}>${reset} { [options] [arguments] | --help }"
     echo
     echo "${yellow}Commands$reset:"
     echo "    ${green}prepare$reset     Collect commit messages and prepend to ChangLog file"
@@ -23,7 +23,7 @@ function info.error() {
     echo "${underline}${lightred}Error$reset${lightred}: $@$reset"
     echo
 }
-info.full() {
+function info.full() {
     info.about;
     info.usage;
 }

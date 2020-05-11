@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-. colors
-
 if [[ $# > 0 ]]; then
     while read option; do
         case ${option} in
