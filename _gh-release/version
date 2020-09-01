@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
-version=`date +'%Y.%m'`
-message='bump version. Release %s'
+commitSpecified=0;
+messageSpecified=0;
+# defaults:
+commit=''
+version=`date +'%Y.%m'`;
+message='bump version. Release %s'; # or 'add %s changelog', if commit was specified
 
 function info.versionHelp() {
     echo
@@ -9,27 +13,36 @@ function info.versionHelp() {
     echo "    Use this command after 'gh-release prepare' and after your own edits of ChangLog file."
     echo
     echo "${yellow}Usage$reset:"
-    echo "    gh-release version ${green}[${reset}{-m|--message} <commit_message>${green}]${reset} ${green}[${reset}{-v|--version|-t|--tag} <tag>${green}]${reset}"
+    echo "    gh-release version ${green}[${reset}{-c|--commit} <commit_hash>${green}]${reset} ${green}[${reset}{-m|--message} <commit_message>${green}]${reset} ${green}[${reset}{-v|--version|-t|--tag} <tag>${green}]${reset}"
     echo
     echo "${yellow}Options$reset:"
-    echo "    ${green}-m|--message           <commit_message>$reset     ${yellow}[default: 'bump version. Release %s']$reset The message of bump commit."
-    echo "                                                                                      You can use ${yellow}%s$reset for insert version into message."
+    echo "    ${green}-c|--commit            <commit_hash>$reset        ${yellow}[default: latest ]$reset The commit on which the tag will be set."
+    echo
+    echo "    ${green}-m|--message           <commit_message>$reset     ${yellow}[default: 'bump version. Release %s' - if NO commit was specified]$reset"
+    echo "                                                ${yellow}[     or: 'add %s changelog'         - if commit was specified   ]$reset"
+    echo "                                                                   The message of bump commit."
+    echo "                                                                   You can use ${yellow}%s$reset for insert version into message."
+    echo
     echo "    ${green}-v|--version|-t|--tag  <tag>$reset                ${yellow}[default: YYYY.MM]$reset Version tag to create."
     echo
 }
 
 while read option; do
     case ${option} in
+        -c|--commit) read commit; commitSpecified=1;;
         -v|--version) read version;;
         -t|--tag) read version;;
-        -m|--message) read message;;
+        -m|--message) read message; messageSpecified=1;;
         -h|--help) info.versionHelp; exit;;
         '') continue;;
         *) echo "${underline}${lightred}Error$reset${lightred}: Unknown option $option$reset"; info.usage; exit 2; ;;
     esac
 done <<< $(for i in "$@"; do echo "$i"; done);
 
-message=`printf "'$message'" ${version}`
+if [[ ${messageSpecified} == 0 && $commitSpecified == 1 ]]; then
+    message='add %s changelog';
+fi
+message=`printf "'$message'" ${version}`;
 
 c.header ' Info: ';
 echo "${green}Version Tag:   $reset $bold$version$reset";
@@ -53,9 +66,15 @@ git diff --cached;
 echo
 c.askContinue "Continue with committing";
 c.header ' Committing: ';
+echo "git commit -m \"${message}\""
 git commit -m "${message}";
 
 echo
 c.askContinue "Push to remote $green'${remote}'$reset";
 c.header ' Pushing: ';
-git push "${remote}";
+git push ${remote};
+
+echo
+c.header ' Add Tag: ';
+git tag ${version}
+git push ${remote} ${version};
