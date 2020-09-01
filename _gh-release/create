@@ -8,15 +8,36 @@ if [[ $# > 0 ]]; then
     done <<< $(for i in "$@"; do echo "$i"; done);
 fi
 
-function getApiRepoUrl() {
+function getRepoApiUrl() {
     git config --get remote.${remote}.url |
-    sed 's|^git@github.com:|https://github.com/|' |
+    sed 's|^git@github.com:|https://api.github.com/repos/|' |
     sed 's|\.git$||';
 }
 
+tag1=`git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1)`
+tag2=`git describe --abbrev=0 --tags $(git rev-list --tags --max-count=1)`
+desc="## Change Log:
+ -
+ -
+
+### [View Commits](https://github.com/alek13/slack/compare/${tag1}...${tag2})"
+
+apiUrl="`getRepoApiUrl`/releases?access_token=$token";
+json='{
+    "tag_name": "%s",
+    "draft": true,
+    "body": "%s"
+}';
+json=`printf "${json}" "${tag2}" "${desc}"`
+
+echo "${apiUrl}"
+echo $token
+echo $json
 
 c.header ' Test: ';
-curl -s -i \
-    -H "Authorization: token 4b199146f920e8998da7b4f0e0e2074b0d564582" \
-    https://api.github.com/repos/lord-server/lord/releases
-# echo "${ttt}"
+#curl -i \
+#    -X POST \
+#    -H "Authorization: token $token" \
+#    -H "Accept: application/vnd.github.v3+json" \
+#    --data "${json}" \
+#    ${apiUrl}
