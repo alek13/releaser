@@ -39,6 +39,9 @@ function autoConfigError() {
     info.error "$red$message. Please use config $bold\`.gh-release\`$reset$red and set $bold\`$configVar\`$reset$red variable.$reset";
 }
 
+if [[ -f '~/.gh-release' ]]; then
+    . '~/.gh-release'
+fi
 if [[ -f '.gh-release' ]]; then
     . '.gh-release'
 fi
