@@ -39,7 +39,7 @@ while read option; do
     esac
 done <<< $(for i in "$@"; do echo "$i"; done);
 
-if [[ ${messageSpecified} == 0 && $commitSpecified == 1 ]]; then
+if [[ ${messageSpecified} == 0 && ${commitSpecified} == 1 ]]; then
     message='add %s changelog';
 fi
 message=`printf "'$message'" ${version}`;
@@ -76,5 +76,9 @@ git push ${remote};
 
 echo
 c.header ' Add Tag: ';
-git tag ${version}
+if [[ ${commitSpecified} == 1 ]]; then
+  git tag ${version} ${commit}
+else
+  git tag ${version}
+fi
 git push ${remote} ${version};
