@@ -25,16 +25,21 @@ while read option; do
         -t|--tag) read version;;
         -h|--help) info.prepareHelp; exit;;
         '') continue;;
-        *) info.error "Unknown option $option"; info.usage; exit 2; ;;
+        *) info.error "Unknown option $option"; info.prepareHelp; exit 2; ;;
     esac
 done <<< $(for i in "$@"; do echo "$i"; done);
 
 
 
 function getGitMessages() {
+    local showCommand=$1
+
     local from=`git describe --tags --abbrev=0`
     local to=${commit}
 
+    if [ $showCommand ]; then
+        echo "git --no-pager log ${from}..${to} --oneline --reverse"
+    fi
     git --no-pager log ${from}..${to} --oneline --reverse
 }
 
@@ -51,18 +56,21 @@ function makeChangeLog() {
     echo "$commitsList" | cut -f 2- -d ' ' | sed 's/^/ - /'
     echo
 }
-function filePrepend() {
+function file.InsertAfterNLines() {
     local file="$1";
     local text="$2";
+    local linesCount="$3";
 
-    echo "$text" > tmp.md;
-    cat "$file" >> tmp.md;
+    head "$file" -n "$linesCount"        >  tmp.md;  # first N lines
+    echo -e "$text\n"                    >> tmp.md;  # add new change-log
+    tail "$file" -n +"$((linesCount+1))" >> tmp.md;  # add other old lines
+
     cat tmp.md > "$file";
     rm tmp.md;
 }
 
 c.header ' Found commits: ';
-getGitMessages; # just output found commits (with hashes) by 'git log'
+getGitMessages true; # just output found commits (with hashes) by 'git log'
 
 c.header ' Prepending to Change Log: ';
 messages=`getGitMessages`;
@@ -72,4 +80,4 @@ echo "${changLog}" |
     sed "s/^ - \(.*\)\$/${green} - ${reset}\\1/";
 echo
 c.askContinue "Continue with prepend this to $changeLogFile";
-filePrepend ${changeLogFile} "$changLog";
+file.InsertAfterNLines "$changeLogFile" "$changLog" 2;
