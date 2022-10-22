@@ -35,7 +35,7 @@ while read option; do
         -m|--message) read message; messageSpecified=1;;
         -h|--help) info.versionHelp; exit;;
         '') continue;;
-        *) echo "${underline}${lightred}Error$reset${lightred}: Unknown option $option$reset"; info.usage; exit 2; ;;
+        *) echo "${underline}${lightred}Error$reset${lightred}: Unknown option $option$reset"; info.versionHelp; exit 2; ;;
     esac
 done <<< $(for i in "$@"; do echo "$i"; done);
 
