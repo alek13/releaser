@@ -1,9 +1,21 @@
 #!/usr/bin/env bash
 
-if [[ $# > 0 ]]; then
+function info.prepareHelp() {
+    echo
+    echo "gh-release ${green}create$reset - Creates release on GitHub."
+    echo "    It takes last two tags and create template on GitHub."
+    echo "    After edit release on GitHub (add ChangLog) and publish it."
+    echo
+    echo "${yellow}Usage$reset:"
+    echo "    gh-release create"
+    echo
+}
+
+if [[ $# -gt 0 ]]; then
     while read option; do
         case ${option} in
-            *) info.error "Unknown option $option"; info.usage; exit 2; ;;
+            -h|--help) info.prepareHelp; exit;;
+            *) info.error "Unknown option $option"; info.prepareHelp; exit 2; ;;
         esac
     done <<< $(for i in "$@"; do echo "$i"; done);
 fi
@@ -13,25 +25,44 @@ function getRepoApiUrl() {
     sed 's|^git@github.com:|https://api.github.com/repos/|' |
     sed 's|\.git$||';
 }
+function getRepoUrl() {
+    git config --get remote.${remote}.url |
+        sed 's|^git@github.com:|https://github.com/|' |
+        sed 's|\.git||';
+}
 
-tag1=`git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1)`
-tag2=`git describe --abbrev=0 --tags $(git rev-list --tags --max-count=1)`
-desc="## Change Log:\n -\n -\n\n ### [View Commits](https://github.com/alek13/slack/compare/${tag1}...${tag2})"
+tag1=$(git describe --abbrev=0 --tags "$(git rev-list --tags --skip=1 --max-count=1)")
+tag2=$(git describe --abbrev=0 --tags "$(git rev-list --tags --max-count=1)")
 
-apiUrl="`getRepoApiUrl`/releases";
-json='{
-    "tag_name": "%s",
-    "draft": true,
-    "body": "%s"
-}';
-json=`printf "${json}" "${tag2}" "${desc}"`
+repoUrl=`getRepoUrl`
+messages=`git --no-pager log ${tag1}..${tag2} --oneline --reverse | cut -f 2- -d ' ' | sed 's/^/ - /'`;
+desc=`echo -e "## Change Log:\n\n${messages}\n\n### [View full changes](${repoUrl}/blob/master/CHANGELOG.md#$tag2)\n### [View Commits](${repoUrl}/compare/${tag1}...${tag2})"`
+
+echo $tag1
+echo $tag2
+echo "$desc"
+
+
+
 
 
 c.header ' Create release on GitHub: ';
-echo "${json}"
-curl \
-    -X POST \
-    -H "Authorization: token $token" \
-    -H "Accept: application/vnd.github.v3+json" \
-    --data "${json}" \
-    ${apiUrl}
+
+gh release create $tag2 --draft --title $tag2 --notes "$desc"
+
+
+
+#apiUrl="`getRepoApiUrl`/releases";
+#json='{
+#    "tag_name": "%s",
+#    "draft": true,
+#    "body": "%s"
+#}';
+#json=`printf "${json}" "${tag2}" "${desc}"`
+
+#curl \
+#    -X POST \
+#    -H "Authorization: token ${token}" \
+#    -H "Accept: application/vnd.github.v3+json" \
+#    --data "${json}" \
+#    ${apiUrl}
