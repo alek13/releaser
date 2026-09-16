@@ -10,11 +10,12 @@
 
 ## Config variables
 
-variable | opt | default | description
--------- | --- | ------- | -----------
-remote        | required | tries to detect `origin` | Name of remote to push. Typically `origin`.
-changeLogFile | optional | detects `CHANGELOG.md` or `changelog.md` | Name of change log file.
-token         | required |   | Access token.
+variable      | opt              | default                  | description
+------------- | ---------------- | ------------------------ | --------------------------------------------------------
+remote        | required         | tries to detect `origin` | Name of remote to push. Typically `origin`.
+changeLogFile | optional         | detects `CHANGELOG.md` or `changelog.md` | Name of change log file.
+token         | required for `gh-release create` |          | Access token.
+submodulesLog | optional         | `0`                      | If enabled (==`1`), `gh-release prepare` also adds a changelog entry with commit messages of every submodule that changed since the last tag.
 
 ## Usage
 
