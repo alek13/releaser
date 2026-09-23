@@ -31,12 +31,45 @@ function getRepoUrl() {
         sed 's|\.git||';
 }
 
-tag1=$(git describe --abbrev=0 --tags "$(git rev-list --tags --skip=1 --max-count=1)")
-tag2=$(git describe --abbrev=0 --tags "$(git rev-list --tags --max-count=1)")
+# Takes the already-written (and possibly hand-edited) section for `## [<version>]...`
+# from the ChangeLog file, instead of regenerating it from `git log`.
+# Prints nothing (and returns 1) if no such section is found.
+function getChangeLogSection() {
+    local ver=$1
+    local startLine=`grep -Fn "## [${ver}]" "${changeLogFile}" | head -1 | cut -d: -f1`
+    if [[ -z ${startLine} ]]; then
+        return 1;
+    fi
+
+    local endLine=`tail -n +"$((startLine+1))" "${changeLogFile}" | grep -n '^## ' | head -1 | cut -d: -f1`
+    if [[ -n ${endLine} ]]; then
+        endLine=$((startLine + endLine - 1));
+    else
+        endLine=`wc -l < "${changeLogFile}"`;
+    fi
+
+    sed -n "$((startLine+1)),${endLine}p" "${changeLogFile}" | sed '/^$/d';
+}
+
+tag2=$(git describe --tags --abbrev=0)
+tag1=$(git describe --tags --abbrev=0 "${tag2}~1" 2>/dev/null)
+
+compareLink="### [View Commits](`getRepoUrl`/commits/${tag2})";
+if [[ ${tag1} != '' ]]; then
+    compareLink="### [View Commits](`getRepoUrl`/compare/${tag1}...${tag2})";
+fi
 
 repoUrl=`getRepoUrl`
-messages=`git --no-pager log ${tag1}..${tag2} --oneline --reverse | cut -f 2- -d ' ' | sed 's/^/ - /'`;
-desc=`echo -e "## Change Log:\n\n${messages}\n\n### [View full changes](${repoUrl}/blob/master/CHANGELOG.md#$tag2)\n### [View Commits](${repoUrl}/compare/${tag1}...${tag2})"`
+messages=`getChangeLogSection "${tag2}"`;
+if [[ -z ${messages} ]]; then
+    c.warning "No entry for [${tag2}] found in ${changeLogFile} — falling back to \`git log\`.";
+    range="${tag2}"; # no previous tag (first ever release) -> full history up to tag2
+    if [[ ${tag1} != '' ]]; then
+        range="${tag1}..${tag2}";
+    fi
+    messages=`git --no-pager log ${range} --oneline --reverse | cut -f 2- -d ' ' | sed 's/^/ - /'`;
+fi
+desc=`echo -e "## Change Log:\n\n${messages}\n\n### [View full changes](${repoUrl}/blob/master/CHANGELOG.md#$tag2)\n${compareLink}"`
 
 echo $tag1
 echo $tag2
