@@ -67,6 +67,11 @@ c.note() {
 c.askContinue() {
     local question=$1
 
+    if [[ ${yes} == 1 ]]; then
+        c.success "${question}? yes (auto)";
+        return;
+    fi
+
     while true; do
         read -p "$question ? [y(es)/n(o)] " -n 1 choice;
         echo;

@@ -6,6 +6,7 @@ messageSpecified=0;
 commit=''
 version=`date +'%Y.%m'`;
 message='bump version. Release %s'; # or 'add %s changelog', if commit was specified
+yes=0
 
 function info.versionHelp() {
     echo
@@ -13,7 +14,7 @@ function info.versionHelp() {
     echo "    Use this command after 'gh-release prepare' and after your own edits of ChangLog file."
     echo
     echo "${yellow}Usage$reset:"
-    echo "    gh-release version ${green}[${reset}{-c|--commit} <commit_hash>${green}]${reset} ${green}[${reset}{-m|--message} <commit_message>${green}]${reset} ${green}[${reset}{-v|--version|-t|--tag} <tag>${green}]${reset}"
+    echo "    gh-release version ${green}[${reset}{-c|--commit} <commit_hash>${green}]${reset} ${green}[${reset}{-m|--message} <commit_message>${green}]${reset} ${green}[${reset}{-v|--version|-t|--tag} <tag>${green}]${reset} ${green}[${reset}{-y|--yes}${green}]${reset}"
     echo
     echo "${yellow}Options$reset:"
     echo "    ${green}-c|--commit            <commit_hash>$reset        ${yellow}[default: latest ]$reset The commit on which the tag will be set."
@@ -24,6 +25,7 @@ function info.versionHelp() {
     echo "                                                                   You can use ${yellow}%s$reset for insert version into message."
     echo
     echo "    ${green}-v|--version|-t|--tag  <tag>$reset                ${yellow}[default: YYYY.MM]$reset Version tag to create."
+    echo "    ${green}-y|--yes$reset                                    ${yellow}[default: off    ]$reset Don't ask for confirmation on any step."
     echo
 }
 
@@ -33,6 +35,7 @@ while read option; do
         -v|--version) read version;;
         -t|--tag) read version;;
         -m|--message) read message; messageSpecified=1;;
+        -y|--yes) yes=1;;
         -h|--help) info.versionHelp; exit;;
         '') continue;;
         *) echo "${underline}${lightred}Error$reset${lightred}: Unknown option $option$reset"; info.versionHelp; exit 2; ;;
@@ -50,8 +53,9 @@ echo "${green}Commit message:$reset $bold$message$reset";
 c.askContinue "Continue";
 
 echo
-echo "${green}git add ${changeLogFile}$reset"
-git add ${changeLogFile}
+changeLogFiles=`git status --porcelain | awk '{print $2}' | grep -iE '(^|/)changelog\.md$'`;
+echo "${green}git add ${changeLogFile} ${changeLogFiles}$reset"
+git add ${changeLogFile} ${changeLogFiles}
 echo
 sleep 0.5;
 

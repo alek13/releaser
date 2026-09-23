@@ -3,6 +3,7 @@
 commit=''
 version=`date +'%Y.%m'`
 folder=''
+yes=0
 
 function info.prepareHelp() {
     echo
@@ -12,12 +13,13 @@ function info.prepareHelp() {
     echo "    If config \`submodulesLog\` is enabled, also adds an entry with commit messages of changed submodules."
     echo
     echo "${yellow}Usage$reset:"
-    echo "    gh-release prepare ${green}[${reset}{-c|--commit} <commit_hash>${green}]${reset} ${green}[${reset}{-v|--version|-t|--tag} <tag>${green}]${reset} ${green}[${reset}{-f|--folder} <folder>${green}]${reset}"
+    echo "    gh-release prepare ${green}[${reset}{-c|--commit} <commit_hash>${green}]${reset} ${green}[${reset}{-v|--version|-t|--tag} <tag>${green}]${reset} ${green}[${reset}{-f|--folder} <folder>${green}]${reset} ${green}[${reset}{-y|--yes}${green}]${reset}"
     echo
     echo "${yellow}Options$reset:"
     echo "    ${green}-c|--commit            <commit_hash>$reset       ${yellow}[default: latest ]$reset The commit to take ${bold}to$reset."
     echo "    ${green}-v|--version|-t|--tag  <tag>$reset               ${yellow}[default: YYYY.MM]$reset Specified tag will be used to generate link in ChangeLog file."
     echo "    ${green}-f|--folder            <folder>$reset            ${yellow}[default: none   ]$reset Only take commits touching ${bold}<folder>$reset, and prepend to ${bold}<folder>/CHANGELOG.md$reset instead of the repo's root one."
+    echo "    ${green}-y|--yes$reset                                   ${yellow}[default: off    ]$reset Don't ask for confirmation before writing to the ChangeLog file."
     echo
 }
 
@@ -27,6 +29,7 @@ while read option; do
         -v|--version) read version;;
         -t|--tag) read version;;
         -f|--folder) read folder;;
+        -y|--yes) yes=1;;
         -h|--help) info.prepareHelp; exit;;
         '') continue;;
         *) info.error "Unknown option $option"; info.prepareHelp; exit 2; ;;
