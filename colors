@@ -64,20 +64,27 @@ c.note() {
 
 
 
+#
+# Asks y/n. On "yes" returns 0.
+# On "no": by default exits the process (safe default for any caller that doesn't check
+# the return value). Pass "noexit" as $2 to instead just return 1, when the caller wants
+# to skip just this one step and continue.
+#
 c.askContinue() {
     local question=$1
+    local noExit=$2
 
     if [[ ${yes} == 1 ]]; then
         c.success "${question}? yes (auto)";
-        return;
+        return 0;
     fi
 
     while true; do
         read -p "$question ? [y(es)/n(o)] " -n 1 choice;
         echo;
         case ${choice} in
-            [Yy]* ) break;;
-            [Nn]* ) exit;;
+            [Yy]* ) return 0;;
+            [Nn]* ) if [[ ${noExit} == 'noexit' ]]; then return 1; fi; exit 1;;
             * ) echo "Please answer y (yes) or n (no).";;
         esac;
     done;

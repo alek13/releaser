@@ -50,7 +50,7 @@ message=`printf "'$message'" ${version}`;
 c.header ' Info: ';
 echo "${green}Version Tag:   $reset $bold$version$reset";
 echo "${green}Commit message:$reset $bold$message$reset";
-c.askContinue "Continue";
+c.askContinue "Continue (status & diff)";
 
 echo
 changeLogFiles=`git status --porcelain | awk '{print $2}' | grep -iE '(^|/)changelog\.md$'`;
@@ -80,9 +80,13 @@ git push ${remote};
 
 echo
 c.header ' Add Tag: ';
-if [[ ${commitSpecified} == 1 ]]; then
-  git tag ${version} ${commit}
+if git rev-parse "${version}" >/dev/null 2>&1; then
+    c.warning "Tag ${bold}${version}${reset} already exists — skipping.";
 else
-  git tag ${version}
+    if [[ ${commitSpecified} == 1 ]]; then
+      git tag ${version} ${commit}
+    else
+      git tag ${version}
+    fi
+    git push ${remote} ${version};
 fi
-git push ${remote} ${version};

@@ -124,5 +124,8 @@ if [[ ! -f "$target" ]]; then
     echo -e "# Change Log\n" > "$target";
 fi
 
-c.askContinue "Continue with prepend this to $target";
-file.InsertAfterNLines "$target" "$changLog" 2;
+if c.askContinue "Continue with prepend this to $target" noexit; then
+    file.InsertAfterNLines "$target" "$changLog" 2;
+else
+    c.warning "Skipped — not modifying $target.";
+fi
