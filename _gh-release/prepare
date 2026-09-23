@@ -2,6 +2,7 @@
 
 commit=''
 version=`date +'%Y.%m'`
+folder=''
 
 function info.prepareHelp() {
     echo
@@ -11,11 +12,12 @@ function info.prepareHelp() {
     echo "    If config \`submodulesLog\` is enabled, also adds an entry with commit messages of changed submodules."
     echo
     echo "${yellow}Usage$reset:"
-    echo "    gh-release prepare ${green}[${reset}{-c|--commit} <commit_hash>${green}]${reset} ${green}[${reset}{-v|--version|-t|--tag} <tag>${green}]${reset}"
+    echo "    gh-release prepare ${green}[${reset}{-c|--commit} <commit_hash>${green}]${reset} ${green}[${reset}{-v|--version|-t|--tag} <tag>${green}]${reset} ${green}[${reset}{-f|--folder} <folder>${green}]${reset}"
     echo
     echo "${yellow}Options$reset:"
     echo "    ${green}-c|--commit            <commit_hash>$reset       ${yellow}[default: latest ]$reset The commit to take ${bold}to$reset."
     echo "    ${green}-v|--version|-t|--tag  <tag>$reset               ${yellow}[default: YYYY.MM]$reset Specified tag will be used to generate link in ChangeLog file."
+    echo "    ${green}-f|--folder            <folder>$reset            ${yellow}[default: none   ]$reset Only take commits touching ${bold}<folder>$reset, and prepend to ${bold}<folder>/CHANGELOG.md$reset instead of the repo's root one."
     echo
 }
 
@@ -24,6 +26,7 @@ while read option; do
         -c|--commit) read commit;;
         -v|--version) read version;;
         -t|--tag) read version;;
+        -f|--folder) read folder;;
         -h|--help) info.prepareHelp; exit;;
         '') continue;;
         *) info.error "Unknown option $option"; info.prepareHelp; exit 2; ;;
@@ -35,18 +38,38 @@ done <<< $(for i in "$@"; do echo "$i"; done);
 function getGitMessages() {
     local showCommand=$1
 
-    local from=`git describe --tags --abbrev=0`
+    local from=`git describe --tags --abbrev=0 2>/dev/null`;
     local to=${commit}
+    local range="${to}"; # no tags yet -> take everything from the start
+    if [[ ${from} != '' ]]; then
+        range="${from}..${to}";
+    fi
+    local pathFilter='';
+    if [[ ${folder} != '' ]]; then
+        pathFilter="-- ${folder}";
+    fi
 
     if [[ ${submodulesLog} == 1 ]]; then
-        local gitCommand="git --no-pager log --reverse --format='%C(auto,yellow)%h%C(auto,reset) %w(0,0,8)%s%n%b' ${from}..${to}"
+        local gitCommand="git --no-pager log --reverse --format='%C(auto,yellow)%h%C(auto,reset) %w(0,0,8)%s%n%b' ${range} ${pathFilter}"
     else
-        local gitCommand="git --no-pager log ${from}..${to} --oneline --reverse"
+        local gitCommand="git --no-pager log ${range} --oneline --reverse ${pathFilter}"
     fi
     if [ $showCommand ]; then
         echo "$gitCommand"
     fi
     eval "$gitCommand"
+}
+
+function getChangeLogTarget() {
+    if [[ ${folder} == '' ]]; then
+        echo "${changeLogFile}";
+        return;
+    fi
+    if [[ -f "${folder}/CHANGELOG.md" ]]; then
+        echo "${folder}/CHANGELOG.md";
+        return;
+    fi
+    echo "${folder}/changelog.md"; # default, also used if it doesn't exist yet
 }
 
 function getRepoUrl() {
@@ -92,5 +115,11 @@ echo "${changLog}" |
     sed "s/^## \(\[${version/\./\\.}\]\)\(.*\)\$/${cyan}## ${green}\\1${cyan}\\2${reset}/" |
     sed "s/^ - \(.*\)\$/${green} - ${reset}\\1/";
 echo
-c.askContinue "Continue with prepend this to $changeLogFile";
-file.InsertAfterNLines "$changeLogFile" "$changLog" 2;
+
+target=`getChangeLogTarget`;
+if [[ ! -f "$target" ]]; then
+    echo -e "# Change Log\n" > "$target";
+fi
+
+c.askContinue "Continue with prepend this to $target";
+file.InsertAfterNLines "$target" "$changLog" 2;
